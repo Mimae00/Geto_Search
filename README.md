@@ -53,19 +53,73 @@ Query
 | Data | Wikipedia MediaWiki API (TextExtracts, no key) | one-time download |
 | UI | Streamlit | local |
 
-## Quick start
+## Run it locally
 
-Requires Python 3.12+.
+> **Live demo:** coming soon. In the meantime, the app runs on any laptop in a few minutes.
+
+### Requirements
+
+- Python **3.12 or 3.13** ([download](https://www.python.org/downloads/))
+- About 2 GB of free RAM and 1.5 GB of disk space
+- Internet access **for the first setup only** (Python packages + ~150 MB of models). Everything after that works offline.
+- No GPU, no API key, no Docker needed
+
+### 1. One-time setup
+
+**Windows (PowerShell)**
 
 ```powershell
+git clone https://github.com/<your-username>/geto-search.git
+cd geto-search
 python -m venv .venv
-.\.venv\Scripts\activate          # macOS/Linux: source .venv/bin/activate
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
+python scripts/ingest.py --no-download   # downloads the models and builds the search index (~3-5 min)
+```
 
+If PowerShell blocks `Activate.ps1`, run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once, then try again.
+
+**macOS / Linux**
+
+```bash
+git clone https://github.com/<your-username>/geto-search.git
+cd geto-search
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python scripts/ingest.py --no-download
+```
+
+The demo documents are already in the repo (`data/corpus/`), so `--no-download` skips the Wikipedia download and only builds the index. You can skip this step, and the app will build the index on its first launch instead. Running it ahead of time means the app opens instantly during a demo.
+
+### 2. Start the app
+
+```bash
+# activate the venv first (see above), then:
 streamlit run app.py
 ```
 
-On first launch the app downloads about 150 MB of ONNX models into `data/models/` and builds the index from `data/corpus/` (a few minutes on CPU). After that it runs fully offline.
+It opens at <http://localhost:8501>. Stop it with `Ctrl+C`.
+
+### 3. Demo walkthrough (about 5 minutes)
+
+1. **Offline answer:** click an example question, e.g. *"How did Apollo 13's crew survive after the oxygen tank exploded?"* The answer comes back with `[1]`-style citations and no LLM.
+2. **Show the retrieval:** expand **Sources** under the answer to show the dense rank, the BM25 rank, the re-rank score and the latency for each passage.
+3. **Compare strategies:** in the sidebar, switch **Search mode** between `hybrid`, `dense` and `keyword`, and turn re-ranking off and on, then ask the same question again.
+4. **Bring your own data:** under **Add documents**, upload a PDF, or type a Wikipedia title such as `Neutron star` (this needs internet), then ask about it.
+5. **Optional LLM:** open **⚙️ LLM settings**, pick **Ollama (local)** (see below), and ask a follow-up like *"Who commanded that mission?"* to show conversational query rewriting.
+6. **Prove it's offline:** turn off Wi-Fi and ask another question. Offline mode and Ollama both keep working.
+
+### Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| `python` not found, or the wrong version | Windows: `py -3.13 -m venv .venv`. macOS/Linux: `python3.13 -m venv .venv` |
+| Port 8501 already in use | `streamlit run app.py --server.port 8502` |
+| "The index is empty" warning | `python scripts/ingest.py --no-download` |
+| Weird results after changing documents | `python scripts/ingest.py --reset --no-download` rebuilds the index from scratch |
+| Ollama "not reachable" | Start the Ollama app, or run `ollama serve`, and check `ollama list` shows a model |
+| First question is slow | Normal: the models load on the first query (a few seconds). Later queries take about 1 second. |
 
 ### Optional: local LLM with Ollama (still offline)
 

@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from rag import RAGPipeline  # noqa: E402
 from rag.config import CORPUS_DIR  # noqa: E402
+from rag.embeddings import get_reranker  # noqa: E402
 from rag.loaders import fetch_wikipedia, load_directory, safe_filename, save_document  # noqa: E402
 
 # Demo corpus: space exploration. Free, CC BY-SA licensed text from Wikipedia.
@@ -90,6 +91,10 @@ def main() -> None:
     total, added = pipe.ingest(docs)
     print(f"Chunks: {total} total, {added} newly embedded in {time.perf_counter() - t0:.1f}s")
     print(f"Index now holds {pipe.store.count()} chunks.")
+
+    # Pre-fetch the re-ranker too, so the app works fully offline from the first question.
+    get_reranker()
+    print("Models ready - the app can now run offline.")
 
 
 if __name__ == "__main__":
